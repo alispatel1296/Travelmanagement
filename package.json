@@ -4,8 +4,8 @@
   "description": "TransFleet - Smart Transit & Fleet Operations Management System (5th Sem FSD Project)",
   "scripts": {
     "start": "node server/server.js",
-    "build": "cd client && npm run build",
-    "dev": "cd client && npm run dev"
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "dev": "npm run dev --prefix client"
   },
   "keywords": ["transportation-management", "fleet-management", "react", "tailwind", "express", "mysql"],
   "author": "FSD Student",

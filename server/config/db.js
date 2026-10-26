@@ -9,26 +9,40 @@ const dbConfig = {
   port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'transfleet_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ...(process.env.DB_SSL === 'true' || process.env.MYSQL_SSL === 'true' ? {
+    ssl: { rejectUnauthorized: false }
+  } : {})
 };
 
 let pool;
 
 export async function initDatabase() {
   try {
-    // 1. Establish connection to create database if not present
-    const tempConnection = await mysql.createConnection(dbConfig);
     const dbName = process.env.DB_NAME || 'transfleet_db';
-    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
-    await tempConnection.end();
+
+    // 1. In local environments, attempt to create database if not present
+    if (!process.env.DATABASE_URL && (process.env.DB_HOST === '127.0.0.1' || !process.env.DB_HOST || process.env.DB_HOST === 'localhost')) {
+      try {
+        const tempConfig = { ...dbConfig };
+        delete tempConfig.database;
+        const tempConnection = await mysql.createConnection(tempConfig);
+        await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
+        await tempConnection.end();
+      } catch {
+        // Safe to ignore if database already exists or permissions restricted
+      }
+    }
 
     // 2. Initialize pool with target database
-    pool = mysql.createPool({
-      ...dbConfig,
-      database: dbName
-    });
+    if (process.env.DATABASE_URL) {
+      pool = mysql.createPool(process.env.DATABASE_URL);
+    } else {
+      pool = mysql.createPool(dbConfig);
+    }
 
     console.log(`[Database] Connected successfully to MySQL database "${dbName}".`);
 

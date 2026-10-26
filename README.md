@@ -112,3 +112,26 @@ Double-click [`run_project.bat`](file:///e:/documents/5th%20Sem/FSD/tr-mng/run_p
 
 ---
 
+## 7. Viva Voce Defense Master Sheet (High-Frequency Questions)
+
+### Q1: "How do you handle race conditions during simultaneous seat bookings?"
+> **Answer**: "We handle concurrency using atomic database operations and row-level locking within a MySQL transaction in `bookingController.js`. We execute:
+> ```sql
+> SELECT id, available_seats, status FROM trips WHERE id = ? FOR UPDATE;
+> UPDATE trips SET available_seats = available_seats - 1 WHERE id = ? AND available_seats > 0;
+> ```
+> The `FOR UPDATE` clause locks the targeted trip row. If two passengers submit a booking request for the last remaining seat at the exact same millisecond, MySQL processes one transaction, decrements the seat count, and causes the second transaction to read `available_seats = 0`, triggering a safe rollback and an HTTP 409 Conflict error without double-booking."
+
+### Q2: "Why choose MySQL over MongoDB for this project?"
+> **Answer**: "Transportation data is fundamentally relational. A transit trip depends on an existing vehicle, an assigned driver, and an ordered sequence of designated stops. Using MySQL allows foreign key constraints (`ON DELETE CASCADE`, `ON DELETE RESTRICT`) to enforce referential integrity and prevent orphaned records. In addition, financial and reservation workflows require ACID transaction compliance."
+
+### Q3: "Explain how Authentication and Authorization work in your application."
+> **Answer**: "User passwords are salted and hashed using `bcryptjs` before storage. Upon successful login, the server signs a JSON Web Token (JWT) containing the user's `id`, `email`, and `role`. The client includes this token in the `Authorization: Bearer <token>` header of every subsequent HTTP request. The backend uses two Express middleware functions:
+> 1. `verifyToken`: Decodes and validates the cryptographic token signature.
+> 2. `requireRole('admin')`: Performs Role-Based Access Control (RBAC) to restrict administrative endpoints like vehicle registration."
+
+### Q4: "What is the purpose of React's Virtual DOM in your dashboard?"
+> **Answer**: "When transit drivers advance a trip stop or when passengers book a seat, React updates its in-memory Virtual DOM tree, calculates the minimal diff between previous and current virtual representations using its reconciliation algorithm, and selectively updates only the affected DOM nodes instead of re-rendering the full page."
+
+### Q5: "What are the advantages of Tailwind CSS over standard CSS?"
+> **Answer**: "Tailwind CSS uses a utility-first methodology. It avoids the maintenance bottleneck of custom CSS classes, ensures a consistent design system (colors, padding, spacing), enforces mobile-first responsive breakpoints (`sm:`, `md:`, `lg:`), and purges unused styles during production build, resulting in a lightweight final stylesheet."
